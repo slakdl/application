@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hej Nørrebrew</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<style>
+    @font-face {
+        font-family: 'G2Hyper-Visible';
+        src: url('assets/G2%20HYPER/G2Hyper-Visible.otf') format('opentype');
+    }
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: 'G2Hyper-Visible', Arial, Helvetica, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        min-height: 100vh;
+    }
+    #addressBlock {
+        white-space: pre-line;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        font-family: 'G2Hyper-Visible', Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        text-transform: uppercase;
+        line-height: 1.25;
+        text-align: left;
+        z-index: 3;
+    }
+    #addressBlock a {
+        font-family: inherit;
+        color: var(--fg);
+    }
+    main {
+        display: grid;
+        position: relative;
+        z-index: 3;
+        width: 640px;
+        max-width: calc(100% - 40px);
+        margin: 0 20px 0 auto;
+        padding: 100px 0 220px;
+        font-family: 'G2Hyper-Visible', Arial, Helvetica, sans-serif;
+        text-align: left;
+    }
+    .letter-layer {
+        grid-area: 1 / 1;
+        white-space: pre-line;
+    }
+    .letter-invert {
+        color: #fff;
+        mix-blend-mode: difference;
+        clip-path: inset(100% 100% 100% 100%);
+        pointer-events: none;
+    }
+    .cursor {
+        display: inline-block;
+        animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+        50% {
+            opacity: 0;
+        }
+    }
+    .logo {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: calc(100% - 40px);
+        aspect-ratio: 662.1 / 132.5;
+        pointer-events: none;
+        background-color: var(--fg);
+        -webkit-mask-image: url('assets/KOBEN_LOGO_WHITE.svg');
+        mask-image: url('assets/KOBEN_LOGO_WHITE.svg');
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-position: left bottom;
+        mask-position: left bottom;
+    }
+</style>
+</head>
+<body>
+<script>
+    const colorBank = [
+        '#040405', // Very Black
+        '#1C1A1B', // Almost Black
+        '#53241F', // Moody Red
+        '#949893', // Mossy Grey
+        '#C3C2C1', // Boring Grey
+        '#F2F3DD', // Barely Yellow
+        '#E3DCA1', // Sleepy Yellow
+        '#E3311C', // Loud Red
+        '#2C4798', // Proper Blue
+        '#EEE229', // Happy Yellow
+        '#F0F0F1'  // Very White
+    ];
+    function pickColor() {
+        return colorBank[Math.floor(Math.random() * colorBank.length)];
+    }
+    // WCAG relative luminance / contrast ratio, so bg/fg pairs never drop below AA (4.5:1).
+    function relLuminance(hex) {
+        const n = hex.replace('#', '');
+        const [r, g, b] = [0, 2, 4].map(i => parseInt(n.substring(i, i + 2), 16) / 255)
+            .map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    }
+    function contrastRatio(a, b) {
+        const l1 = relLuminance(a), l2 = relLuminance(b);
+        const lighter = Math.max(l1, l2), darker = Math.min(l1, l2);
+        return (lighter + 0.05) / (darker + 0.05);
+    }
+    const bg = pickColor();
+    const fgCandidates = colorBank.filter(c => c !== bg && contrastRatio(bg, c) >= 4.5);
+    const fg = fgCandidates.length
+        ? fgCandidates[Math.floor(Math.random() * fgCandidates.length)]
+        : colorBank.reduce((best, c) => contrastRatio(bg, c) > contrastRatio(bg, best) ? c : best);
+    document.documentElement.style.setProperty('--bg', bg);
+    document.documentElement.style.setProperty('--fg', fg);
+</script>
+
+<div class="logo" aria-label="KOBEN"></div>
+<div id="addressBlock"></div>
+<main>
+    <div class="letter-layer" id="letterNormal"></div>
+    <div class="letter-layer letter-invert" id="letterInvert" aria-hidden="true"></div>
+</main>
+
+<script>
+    const addressBefore = `Studio KOBEN\nA creative office\nSindshvilevej 9a\n2000 Frederiksberg\n\n`;
+    const addressLinkText = `Portfolio on request`;
+    const addressElement = document.getElementById('addressBlock');
+    let ai = 0;
+    let addressLinkInserted = false;
+    function typeAddress() {
+        const full = addressBefore + addressLinkText;
+        if (ai < full.length) {
+            if (!addressLinkInserted && ai >= addressBefore.length) {
+                const a = document.createElement('a');
+                a.href = 'mailto:hello@koben.studio';
+                a.style.color = 'var(--fg)';
+                addressElement.appendChild(a);
+                addressLinkInserted = true;
+            }
+            if (addressLinkInserted) {
+                addressElement.querySelector('a').textContent += full.charAt(ai);
+            } else {
+                addressElement.textContent += full.charAt(ai);
+            }
+            ai++;
+            setTimeout(typeAddress, 12);
+        }
+    }
+    typeAddress();
+
+    const before = `Hej Nørrebrew\nVi er et nyt multidisciplinært designstudio, der netop har lanceret vores studio, og i den forbindelse holder vi en lille launch for venner, samarbejdspartnere og folk fra designbranchen.  \n\nVi er fire designere med hver vores faglighed, digital design, grafisk design, motion og 3D, men arbejder tæt sammen på tværs af disciplinerne for at skabe sammenhængende visuelle identiteter og digitale oplevelser.\n\nI forbindelse med vores launch ville vi høre, om Nørrebrew kunne have lyst til at støtte arrangementet. Vi synes, jeres univers, tilgang og branding passer rigtig godt til den type kreative miljø, vi selv kommer fra, og det kunne være fedt at have Nørrebrew med som en del af aftenen.\n\nVi vil selvfølgelig gerne kreditere Nørrebrew i forbindelse med arrangementet og på vores sociale kanaler. Og hvis der på et tidspunkt skulle være brug for hjælp på designsiden, vil vi også meget gerne samarbejde. Vi arbejder på tværs af disciplinerne og vil gerne stå til rådighed til bl.a. kampagner, content, print eller digitale løsninger.\n\nHvis det lyder interessant, kommer vi meget gerne forbi og fortæller mere :))`;
+
+    const letterNormal = document.getElementById('letterNormal');
+    const letterInvert = document.getElementById('letterInvert');
+    const logoEl = document.querySelector('.logo');
+
+    // Where the letter text overlaps the fixed logo at the bottom of the
+    // screen, cut a hole in the normal layer and reveal the difference-
+    // blended layer in just that hole, so the text stays readable over
+    // the logo without ever recoloring anything outside that overlap.
+    function updateTextClip() {
+        const textRect = letterNormal.getBoundingClientRect();
+        const logoRect = logoEl.getBoundingClientRect();
+
+        const ox1 = Math.max(textRect.left, logoRect.left);
+        const oy1 = Math.max(textRect.top, logoRect.top);
+        const ox2 = Math.min(textRect.right, logoRect.right);
+        const oy2 = Math.min(textRect.bottom, logoRect.bottom);
+
+        if (ox2 <= ox1 || oy2 <= oy1 || textRect.width === 0 || textRect.height === 0) {
+            letterNormal.style.clipPath = 'none';
+            letterInvert.style.clipPath = 'inset(100% 100% 100% 100%)';
+            return;
+        }
+
+        const L = Math.max(0, Math.min(100, (ox1 - textRect.left) / textRect.width * 100));
+        const R = Math.max(0, Math.min(100, (ox2 - textRect.left) / textRect.width * 100));
+        const T = Math.max(0, Math.min(100, (oy1 - textRect.top) / textRect.height * 100));
+        const B = Math.max(0, Math.min(100, (oy2 - textRect.top) / textRect.height * 100));
+
+        letterNormal.style.clipPath = `polygon(evenodd, 0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, ${L}% ${T}%, ${L}% ${B}%, ${R}% ${B}%, ${R}% ${T}%, ${L}% ${T}%, 0% 0%)`;
+        letterInvert.style.clipPath = `inset(${T}% ${100 - R}% ${100 - B}% ${L}%)`;
+    }
+
+    let i = 0;
+    function type() {
+        if (i <= before.length) {
+            const chunk = before.slice(0, i);
+            letterNormal.textContent = chunk;
+            letterInvert.textContent = chunk;
+            updateTextClip();
+            i++;
+            setTimeout(type, 8);
+        }
+    }
+    type();
+
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                updateTextClip();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
+    window.addEventListener('resize', updateTextClip);
+</script>
+</body>
+</html>
